@@ -1,206 +1,284 @@
 from __future__ import annotations
-from ..canmsgs import CANMsgTable, CANMsg, MessageType
-from ..parser import CANOpenParser
 import curses
 from abc import ABC, abstractmethod
 
 
 class Pane(ABC):
-    def __init__(self: Pane, name: str, parser: CANOpenParser, capacity: int =
-    None):
-        self.pad = curses.newpad(1, 1)
-        self.cols = {}
-        self.capacity = capacity
-        self.table = CANMsgTable(capacity=capacity)
-        self.__parser = parser
-        self.parent = curses.newwin(0, 0)
-        self.name = name
+    """Abstract Pane Class, contains a PAD and a window
 
-        # Pane states
-        self.__needs_refresh = False
-        self.__scroll_position_y = 0
-        self.__scroll_position_x = 0
+    :param v_height: The virtual height of the embedded pad
+    :type v_height: int
+
+    :param v_width: The virtual width of the embedded pad
+    :type v_width: int
+
+    :param d_height: The drawn height of the embedded pad
+    :type d_height: int
+
+    :param d_width: The drawn width of the embedded pad
+    :type d_width: int
+
+    :param border: A style option for drawing a border around the pane
+    :type border: bool
+    """
+
+    def __init__(self: Pane,
+                 parent: any = None,
+                 height: int = 1,
+                 width: int = 1,
+                 y: int = 0,
+                 x: int = 0,
+                 border: bool = True,
+                 color_pair: int = 0):
+        """Abstract pane initialization
+
+        :param border: Toggiling whether or not to draw a border
+        :type border: bool
+        :value border: True
+
+        :param color_pair: The color pair bound in curses config to use
+        :type color_pair: int
+        :value color_pair: 4
+        """
+        # Set virtual dimensions
+        self.v_height = height
+        self.v_width = width
+        self.y = y
+        self.x = x
+
+        # Set or create the parent window
+        self.parent = parent or curses.newwin(self.v_height, self.v_width)
+        self._pad = curses.newpad(self.v_height, self.v_width)
+        self._pad.scrollok(True)
+
+        # Set the draw dimensions
+        self.__reset_draw_dimensions()
+
+        # Pane style options and state details
+        self.border = border
         self.selected = False
-        self.pad = curses.newpad(1, 1)
-        self.pad.scrollok(True)
-        self.vwidth = 0
+        self._style = curses.color_pair(color_pair)
+        self.needs_refresh = False
+        self.scroll_position_y = 0
+        self.scroll_position_x = 0
 
-        # Draw Style
-        self.__style = curses.color_pair(4)
+    @property
+    def scroll_limit_y(self: Pane) -> int:
+        return 0
+
+    @property
+    def scroll_limit_x(self: Pane) -> int:
+        return 0
 
     @abstractmethod
-    def draw(self: Pane):
-        height, width = self.parent.getmaxyx()
-        y_offset, x_offset = self.parent.getbegyx()
+    def draw(self: Pane) -> None:
+        """Abstract draw method, must be overwritten in child class
+        draw should first resize the pad using: `super().resize(w, h)`
+        then add content using: self._pad.addstr()
+        then refresh using: `super().refresh()`
 
-        vheight = len(self.table) + 50
-        vheight = height if vheight < height else vheight
+        abstract method will clear and handle border
 
-        self.vwidth = width if self.vwidth < width else self.vwidth
+        child class should also set _scroll_limit_x and _scroll_limit_y here
+        """
+        if self.needs_refresh:
+            self.refresh()
 
-        self.pad.resize(vheight - 1, self.vwidth)
+        self.parent.attron(self._style)
+        self._pad.attron(self._style)
 
-        if self.__needs_refresh:
-            self.clear()
+        if(self.border):
+            self._pad.box()
 
-        # needed?
-        self.parent.attron(self.__style)
-        self.pad.attron(self.__style)
+    def resize(self: Pane, height: int, width: int) -> None:
+        """Resize the virtual pad and change internal variables to reflect that
 
-        self.parent.box()
-        out_of = '/{}'.format(self.capacity) \
-            if self.capacity is not None else ''
-        banner = '{} ({}{})'.format(self.name,
-                                    len(self.table),
-                                    out_of)
+        :param height: New virtual height
+        :type height: int
 
-        if self.selected:
-            self.parent.attron(self.__style | curses.A_REVERSE)
+        :param width: New virtual width
+        :type width: int
+        """
+        self.v_height = height
+        self.v_width = width
+        self.__reset_draw_dimensions()
+        self._pad.resize(self.v_height, self.v_width)
 
-        self.parent.addstr(0, 1, banner)
+    def __reset_draw_dimensions(self: Pane) -> None:
+        p_height, p_width = self.parent.getmaxyx()
+        self.d_height = min(self.v_height, p_height - 1)
+        self.d_width = min(self.v_width, p_width - 1)
 
-        self.parent.attroff(self.__style | curses.A_REVERSE)
+    def clear(self: Pane) -> None:
+        """Clear all contents of pad and parent window
 
-        # Draw Header
-        line = ""
-        for col in self.cols:
-            line += col.ljust(self.cols[col][1], ' ')
+        .. warning::
 
-        self.pad.attron(self.__style | curses.A_BOLD)
-        self.pad.addstr(0, 1, line)
-        self.pad.attroff(self.__style | curses.A_BOLD)
-        # self.pad.attron(self.__style)
-
-        for i, arb_id in enumerate(self.table):
-            msg = self.table[arb_id]
-            attributes = dir(msg)
-            line = ""
-            for col in self.cols.values():
-                if col[0] in attributes:
-                    if col[0] == 'arb_id':
-                        value = hex(msg.arb_id)
-                    else:
-                        value = str(getattr(msg, col[0]))
-                else:
-                    value = "Not Found"
-
-                line += value.ljust(col[1], ' ')
-
-            if len(line) > self.vwidth:
-                self.vwidth = len(line) + 2
-                self.pad.resize(vheight - 1, self.vwidth)
-            if i == self.__scroll_position_y and self.selected:
-                self.pad.attron(self.__style | curses.A_REVERSE)
-            self.pad.addstr(i + 1, 1, line)
-            if i == self.__scroll_position_y and self.selected:
-                self.pad.attroff(self.__style | curses.A_REVERSE)
-                # self.pad.attron(self.__style)
-
-        self.parent.refresh()
-
-        if self.__scroll_position_y < height - 3:
-            scroll_offset_y = 0
-        else:
-            scroll_offset_y = self.__scroll_position_y - (height - 4)
-
-        if self.__scroll_position_x + width > self.vwidth:
-            self.__scroll_position_x = self.vwidth - width
-
-        scroll_offset_x = self.__scroll_position_x
-
-        self.pad.refresh(scroll_offset_y,
-                         scroll_offset_x,
-                         y_offset + 1,
-                         x_offset + 1,
-                         y_offset + height - 2,
-                         x_offset + width - 2)
-
-    def clear(self):
-        self.pad.clear()
+            This should only be used if an event changing the entire pane
+            occurs. If used on every cycle, a flickering effect will occur,
+            due to the slowness of the operation.
+        """
+        self._pad.clear()
         self.parent.clear()
-        self.__needs_refresh = False
+        # self.refresh()
 
-    @abstractmethod
-    def add(self: Pane, msg: CANMsg):
-        if self.table is not None:
-            msg.parsed_msg = self.__parser.parse(msg)[0]
-            self.table += msg
-        self.__needs_refresh = True
-        ...
+    def clear_line(self: Pane, y: int, style: any = None) -> None:
+        """Clears a single line of the Pane
 
-    def scroll_up(self, rate=1):
-        self.__scroll_position_y -= rate
-        if self.__scroll_position_y < 0:
-            self.__scroll_position_y = 0
+        :param y: The line to clear
+        :type y: int
 
-    def scroll_down(self, rate=1):
-        self.__scroll_position_y += rate
-        if self.__scroll_position_y > len(self.table) - 1:
-            self.__scroll_position_y = len(self.table) - 1
+        :param style: The background color to set when clearing the line
+        :type style: int
+        """
+        line_style = style or self._style
+        self._pad.move(y, 1)
+        # self._pad.addstr(y, 1, ' ' * (self.d_width - 2), curses.COLOR_BLUE)
+        self._pad.attron(line_style)
+        self._pad.clrtoeol()
+        self._pad.attroff(line_style)
 
-    def scroll_left(self, rate=1):
-        self.__scroll_position_x -= rate
-        if self.__scroll_position_x < 0:
-            self.__scroll_position_x = 0
+    def refresh(self: Pane) -> None:
+        """Refresh the pane based on configured draw dimensions
+        """
+        self._pad.refresh(self.scroll_position_y,
+                          self.scroll_position_x,
+                          self.y,
+                          self.x,
+                          self.d_height,
+                          self.d_width)
+        self.needs_refresh = False
 
-    def scroll_right(self, rate=1):
-        self.__scroll_position_x += rate
-        if self.__scroll_position_x > self.vwidth:
-            self.__scroll_position_x = self.vwidth - 2
+    def scroll_up(self: Pane, rate: int = 1) -> bool:
+        """Scroll pad upwards
 
-class HeartBeatPane(Pane):
+        .. note::
 
-    def __init__(self: HeartBeatPane, name, parser: CANOpenParser,
-                 capacity: int = None, fields=[], frame_types=[]):
-        super().__init__(name, parser, capacity)
-        self.cols['COB ID'] = ['arb_id', 0]
-        self.cols['Node Name'] = ['node_name', 0]
-        self.cols['Interface'] = ['interface', 0]
-        self.cols['State'] = ['status', 0]
-        self.cols['Status'] = ['parsed_msg', 0]
+            Scroll limit must be set by child class
 
-        # Turn the frame-type strings into enumerations
-        self.frame_types = []
-        for ft in frame_types:
-            self.frame_types.append(MessageType[ft])
+        :param rate: Number of lines to scroll by
+        :type rate: int
 
-        for col in self.cols:
-            self.cols[col][1] = len(col) + 2
+        :return: Indication of whether a limit was reached. False indicates a
+            limit was reached and the pane cannot be scrolled further in that
+            direction
+        :rtype: bool
+        """
+        self.scroll_position_y -= rate
+        if self.scroll_position_y < 0:
+            self.scroll_position_y = 0
+            return False
+        return True
 
-    def add(self: Pane, msg: CANMsg):
-        super().add(msg)
-        attributes = dir(msg)
-        for col in self.cols.values():
-            if col[0] in attributes:
-                value = str(getattr(msg, col[0]))
-            else:
-                value = "Not Found"
+    def scroll_down(self: Pane, rate: int = 1) -> bool:
+        """Scroll pad downwards
 
-            col[1] = len(value) + 2 if len(value) + 2 > col[1] else col[1]
+        .. note::
 
-    def draw(self: HeartBeatPane):
-        super().draw()
+            Scroll limit must be set by child class
 
+        :param rate: Number of lines to scroll by
+        :type rate: int
 
-    def has_frame_type(self, frame):
-        return frame.message_type in self.frame_types
+        :return: Indication of whether a limit was reached. False indicates a
+            limit was reached and the pane cannot be scrolled further in that
+            direction
+        :rtype: bool
+        """
+        self.scroll_position_y += rate
+        if self.scroll_position_y > self.scroll_limit_y:
+            self.scroll_position_y = self.scroll_limit_y
+            return False
+        return True
 
+    def scroll_left(self: Pane, rate: int = 1) -> bool:
+        """Scroll pad left
 
-class MiscPane(HeartBeatPane):
-    def __init__(self, name, parser: CANOpenParser, capacity: int = None,
-                 fields=[], frame_types=[]):
-        super().__init__(name, parser, capacity, fields, frame_types)
-        # self.cols += [
-        #    "COB ID",
-        #    "Message"
-        #]
+        .. note::
 
+            Scroll limit must be set by child class
 
-class InfoPane(HeartBeatPane):
-    def __init__(self, name, parser: CANOpenParser, capacity: int = None,
-                 fields=[], frame_types=[]):
-        super().__init__(name, parser, capacity, fields, frame_types)
-        # self.cols += [
-        #    "COB ID",
-        #    "Message"
-        #]
+        :param rate: Number of lines to scroll by
+        :type rate: int
+
+        :return: Indication of whether a limit was reached. False indicates a
+            limit was reached and the pane cannot be scrolled further in that
+            direction
+        :rtype: bool
+        """
+        self.scroll_position_x -= rate
+        if(self.scroll_position_x < 0):
+            self.scroll_position_x = 0
+            return False
+        return True
+
+    def scroll_right(self: Pane, rate: int = 1) -> bool:
+        """Scroll pad right
+
+        .. note::
+
+            Scroll limit must be set by child class
+
+        :param rate: Number of lines to scroll by
+        :type rate: int
+
+        :return: Indication of whether a limit was reached. False indicates a
+            limit was reached and the pane cannot be scrolled further in that
+            direction
+        :rtype: bool
+        """
+        self.scroll_position_x += rate
+        if self.scroll_position_x > self.scroll_limit_x:
+            self.scroll_position_x = self.scroll_limit_x
+            return False
+        return True
+
+    def add_line(self: Pane,
+                 y: int,
+                 x: int,
+                 line: str,
+                 bold: bool = False,
+                 highlight: bool = False,
+                 color: any = None) -> None:
+        """Adds a line of text to the Pane and if needed, it handles the
+        process of resizing the embedded pad
+
+        :param y: Line's row position
+        :type y: int
+
+        :param x: Line's collumn position
+        :type x: int
+
+        :param line: Text to write to the Pane
+        :type line: str
+
+        :param bold: A style option to bold the line written
+        :type bold: bool
+
+        :param highlight: A syle option to highlight the line writte
+        :type highlight: bool
+
+        :param style: A color option for the line
+        :type style: curses.style
+        """
+        # Set the color option to the pane default if none was specified
+        line_style = color or self._style
+
+        # Widen pad when necessary
+        new_width = len(line) + x
+        if(new_width > self.v_width):
+            self.resize(self.v_height, new_width)
+
+        # Heighten the pad when necessary
+        if(y > self.v_height):
+            self.resize(y + 1, self.v_width)
+
+        # Add style options
+        if(bold):
+            line_style |= curses.A_BOLD
+        if(highlight):
+            line_style |= curses.A_REVERSE
+
+        # Add the line
+        if(y < self.d_height):
+            self._pad.addstr(y, x, line, line_style)
