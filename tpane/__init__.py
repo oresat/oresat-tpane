@@ -1,0 +1,29 @@
+"""This module is responsible for providing a high-level interface for elements
+of Curses UI and general user interaction with the app,
+"""
+from .pane import Pane
+from .windows import PopupWindow
+from .message_pane import MessagePane
+
+MAJOR = 0
+MINOR = 0
+PATCH = 0
+
+LIB_NAME = 'oresat-tpane'
+LIB_VERSION = f'{MAJOR}.{MINOR}.{PATCH}'
+LIB_AUTHOR = 'Dmitri McGuckin'
+LIB_EMAIL = 'dmitri3@pdx.edu'
+LIB_URL = 'https://github.com/oresat/oresat-tpane'
+LIB_LICENSE = 'GPL-3.0'
+LIB_DOCS = 'https://canopen-monitor.readthedocs.io'
+LIB_ISSUES = 'https://github.com/oresat/oresat-tpane/labels/bug'
+
+
+MAINTAINER_NAME = 'Portland State Aerospace Society'
+MAINTAINER_EMAIL = 'oresat@pdx.edu'
+
+__all__ = [
+    "Pane",
+    "MessagePane",
+    "PopupWindow"
+]
