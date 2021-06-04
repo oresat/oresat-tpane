@@ -28,7 +28,9 @@ setuptools.setup(
         "Topic :: Scientific/Engineering :: Information Analysis",
         "Topic :: Software Development :: User Interfaces",
     ],
-    install_requires=[],
+    install_requires=[
+        "urwid >= 2.1.2"
+    ],
     extras_require={
         "dev": [
             "python-can",

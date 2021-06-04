@@ -3,13 +3,13 @@ of Curses UI and general user interaction with the app,
 """
 from .pane import Pane
 from .windows import PopupWindow
-from .message_pane import MessagePane
 
 MAJOR = 0
 MINOR = 0
 PATCH = 0
 
 LIB_NAME = 'oresat-tpane'
+LIB_DESCRIPTION = 'This module is responsible for providing a high-level interface for elements of Curses UI and general user interaction with the app'
 LIB_VERSION = f'{MAJOR}.{MINOR}.{PATCH}'
 LIB_AUTHOR = 'Dmitri McGuckin'
 LIB_EMAIL = 'dmitri3@pdx.edu'
@@ -24,6 +24,5 @@ MAINTAINER_EMAIL = 'oresat@pdx.edu'
 
 __all__ = [
     "Pane",
-    "MessagePane",
     "PopupWindow"
 ]
