@@ -1,23 +1,32 @@
 import setuptools
-import tpane as t
+from oresat_tpane import LIB_NAME, \
+                         LIB_VERSION, \
+                         LIB_AUTHOR, \
+                         MAINTAINER_NAME, \
+                         MAINTAINER_EMAIL, \
+                         LIB_LICENSE, \
+                         LIB_DESCRIPTION, \
+                         LIB_DOCS, \
+                         LIB_ISSUES, \
+                         LIB_URL
 
 with open('README.md', 'r') as file:
     long_description = file.read()
 
 setuptools.setup(
-    name=t.LIB_NAME,
-    version=t.LIB_VERSION,
-    author=t.LIB_AUTHOR,
-    maintainer=t.MAINTAINER_NAME,
-    maintainer_email=t.MAINTAINER_EMAIL,
-    license=t.LIB_LICENSE,
-    description=t.LIB_DESCRIPTION,
+    name=LIB_NAME,
+    version=LIB_VERSION,
+    author=LIB_AUTHOR,
+    maintainer=MAINTAINER_NAME,
+    maintainer_email=MAINTAINER_EMAIL,
+    license=LIB_LICENSE,
+    description=LIB_DESCRIPTION,
     long_description=long_description,
     long_description_content_type='text/markdown',
-    url=t.LIB_URL,
+    url=LIB_URL,
     project_urls={
-        'Documentation': t.LIB_DOCS,
-        'Bug Tracking': t.LIB_ISSUES
+        'Documentation': LIB_DOCS,
+        'Bug Tracking': LIB_ISSUES
     },
     packages=setuptools.find_packages(),
     classifiers=[
