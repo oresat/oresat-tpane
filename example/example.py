@@ -1,9 +1,11 @@
 from datetime import datetime, timedelta
-import urwid
-from oresat_tpane import Pane, VSplit, HSplit
+from oresat_tpane import Pane, VSplit, HSplit, TextFill, MainLoop
 
 if '__main__' == __name__:
     """
+    This was my first attempt to create a canopen-monitor type interface 
+    using only standard urwid widgets
+    
     frame = urwid.Frame(body=urwid.Filler(urwid.Text('HELLO World!')),
                         header=urwid.Text('Header'),
                         footer=urwid.Text('Footer'))
@@ -17,9 +19,9 @@ if '__main__' == __name__:
                          bline=' ', brcorner=' ')
 
     """
-    hb = Pane(urwid.Filler(urwid.Text("Heartbeat"), 'top'), True, "Heartbeats: (0 messages)")
-    info = Pane(urwid.Filler(urwid.Text("Info"), 'top'), True, "Info")
-    misc = Pane(urwid.Filler(urwid.Text("Misc"), 'top'), True, "Miscellaneous: (0 messages)")
+    hb = Pane(TextFill("Heartbeat", 'top'), True, "Heartbeats: (0 messages)")
+    info = Pane(TextFill("Info", 'top'), True, "Info")
+    misc = Pane(TextFill("Misc", 'top'), True, "Miscellaneous: (0 messages)")
     top = VSplit([hb, info])
     container = HSplit([top, misc])
 
@@ -27,7 +29,7 @@ if '__main__' == __name__:
     view = Pane(container, False, f'{datetime.now().ctime()},',
                 title_attr="text")
 
-    loop = urwid.MainLoop(view, palette)
+    loop = MainLoop(view, palette)
     endtime = datetime.now() + timedelta(minutes=1)
     # Automatically calls loop.stop() when exiting context
     with loop.start():

@@ -1,5 +1,5 @@
 from urwid import WidgetDecoration, WidgetWrap, Text, Divider
-from urwid import SolidFill, Widget, Columns, Pile
+from urwid import SolidFill, Widget, Columns, Pile, Filler
 from typing import Optional
 
 
@@ -19,6 +19,32 @@ class HSplit(Pile):
     Currently this is just the Pile class but may be extended or replaced
     in the future"""
     pass
+
+
+class TextFill(Filler):
+    """Urwid based text widget with fill. This is a convenience widget to
+    create the text and filler widget at the same time.
+
+    :ivar text: Reference to the contained text widget
+    :type text: Text
+    """
+
+    def __init__(self, text: str, valign: str = 'middle', halign: str = 'left'):
+        """TextFill Constructor
+
+        :param text: text to be displayed within TextFill
+        :type text: str
+
+        :param valign: vertical align text to 'top', 'middle' or 'bottom',
+        defaults to 'middle'
+        :type valign: str, optional
+
+        :param halign: horizontal align text to 'left', 'right', or 'center',
+        defaults to 'left'
+        :type halign: str, optional
+        """
+        self.text = Text(text, halign)
+        super().__init__(self.text, valign)
 
 
 class Pane(WidgetDecoration, WidgetWrap):
