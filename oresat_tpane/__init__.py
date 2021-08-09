@@ -30,4 +30,5 @@ __all__ = [
     "TextFill",
     "MainLoop",
     "DataGrid",
+    "ExitMainLoop",
 ]
