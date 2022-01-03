@@ -10,7 +10,9 @@ MINOR = 0
 PATCH = 1
 
 LIB_NAME = 'oresat-tpane'
-LIB_DESCRIPTION = 'This module is responsible for providing a high-level interface for elements of Curses UI and general user interaction with the app'
+LIB_DESCRIPTION = 'This module is responsible for providing a high-level' \
+    ' interface for elements of Curses UI and general user interaction with' \
+    ' the app'
 LIB_VERSION = f'{MAJOR}.{MINOR}.{PATCH}'
 LIB_AUTHOR = 'Dmitri McGuckin'
 LIB_EMAIL = 'dmitri3@pdx.edu'

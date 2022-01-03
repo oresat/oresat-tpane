@@ -150,8 +150,7 @@ class Pane(WidgetDecoration, WidgetWrap):
         """
 
         self.title = _create_text_widget(title, title_align, title_attr)
-        self.footer = _create_text_widget(footer, footer_align,
-                                               footer_attr)
+        self.footer = _create_text_widget(footer, footer_align, footer_attr)
 
         # Top
         top = _create_header_footer(self.title, title_align, border)
