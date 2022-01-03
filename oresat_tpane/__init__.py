@@ -2,9 +2,9 @@
 of Curses UI and general user interaction with the app,
 """
 
-MAJOR = 0
+MAJOR = 1
 MINOR = 0
-PATCH = 2
+PATCH = 0
 
 LIB_NAME = 'oresat-tpane'
 LIB_DESCRIPTION = 'This module is responsible for providing a high-level' \

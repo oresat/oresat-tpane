@@ -16,7 +16,7 @@ A wrapper... to the NCurses library, providing high-level interface to "Panes" a
 
 ### Install
 
-`$` `pip install tpane`
+`$` `pip install oresat-tpane`
 
 ***
 
@@ -31,9 +31,3 @@ Check out our [Read The Docs](https://oresat-tpane.readthedocs.io) pages for mor
 `$` `pip install -e .[dev]`
 
 *(Note: the `-e` flag creates a symbolic-link to your local development version. Set it once, and forget it)*
-
-### Create Documentation Locally
-
-`$` `make -C docs clean html`
-
-*(Note: documentation is configured to auto-build with ReadTheDocs on every push to master)*
