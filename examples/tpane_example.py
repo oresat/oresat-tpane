@@ -1,6 +1,6 @@
+#!/usr/bin/env python3
 from datetime import datetime
-from oresat_tpane import Pane, VSplit, HSplit, TextFill, MainLoop, DataGrid
-from oresat_tpane import ExitMainLoop
+from oresat_tpane import Pane, VSplit, HSplit, TextFill, DataGrid
 from time import sleep
 from threading import Thread, Event
 from random import randint
@@ -22,21 +22,16 @@ def update_header(pane: Pane, event: Event):
         sleep(1)
 
 
-def force_refresh(main_loop: MainLoop, data=None):
+def force_refresh(main_loop, data=None):
     main_loop.draw_screen()
     main_loop.set_alarm_in(0.2, force_refresh)
 
 
-def exit_on_q(key):
-    if key in ('q', 'Q'):
-        raise ExitMainLoop()
-
-
-if '__main__' == __name__:
+def main():
     """
-    This was my first attempt to create a canopen-monitor type interface 
+    This was my first attempt to create a canopen-monitor type interface
     using only standard urwid widgets
-    
+
     frame = urwid.Frame(body=urwid.Filler(urwid.Text('HELLO World!')),
                         header=urwid.Text('Header'),
                         footer=urwid.Text('Footer'))
@@ -70,9 +65,9 @@ if '__main__' == __name__:
                 title_attr="text", footer="foot")
     thread2 = Thread(target=update_header, args=(view, e,))
     thread2.start()
-    loop = MainLoop(view, palette, unhandled_input=exit_on_q)
-    loop.set_alarm_in(1, force_refresh)
-    loop.run()
     e.set()
     thread.join()
     thread2.join()
+
+if __name__ == '__main__':
+    main()
