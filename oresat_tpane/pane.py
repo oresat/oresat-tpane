@@ -47,6 +47,54 @@ class TextFill(Filler):
         super().__init__(self.text, valign)
 
 
+def _format_title(title: str) -> str:
+    if len(title) > 0:
+        return " %s " % title
+    else:
+        return ""
+
+
+def _create_text_widget(text: str, align: str, attr: Optional[str]) \
+        -> Optional[Widget]:
+    if text == "":
+        return None
+
+    if align not in ('left', 'center', 'right'):
+        raise ValueError(
+            f'align must be one of "left", "right", or "center, {align} '
+            f'provided"')
+
+    if attr:
+        return Text((attr, _format_title(text)))
+    else:
+        return Text(_format_title(text))
+
+
+def _create_header_footer(text: Text, text_align: str, border: bool) \
+        -> Optional[Columns]:
+
+    if Text is None and not border:
+        return None
+
+    if border:
+        line = Divider(u'─')
+    else:
+        line = Divider(' ')
+
+    if text:
+        if text_align == 'left':
+            widgets = [('flow', text), line]
+        else:
+            widgets = [line, ('flow', text)]
+            if text_align == 'center':
+                widgets.append(line)
+
+    else:
+        widgets = [line]
+
+    return Columns(widgets)
+
+
 class Pane(WidgetDecoration, WidgetWrap):
     """ Urwid based generic pane Widget based on the urwid LineBox class.
     The pane is an urwid box for containing additional urwid based widgets
@@ -101,12 +149,12 @@ class Pane(WidgetDecoration, WidgetWrap):
         :raises ValueError: title_align and footer_align must be valid values
         """
 
-        self.title = self._create_text_widget(title, title_align, title_attr)
-        self.footer = self._create_text_widget(footer, footer_align,
+        self.title = _create_text_widget(title, title_align, title_attr)
+        self.footer = _create_text_widget(footer, footer_align,
                                                footer_attr)
 
         # Top
-        top = self._create_header_footer(self.title, title_align, border)
+        top = _create_header_footer(self.title, title_align, border)
 
         if border:
             top = Columns([
@@ -131,7 +179,7 @@ class Pane(WidgetDecoration, WidgetWrap):
             ])
 
         # Bottom
-        bottom = self._create_header_footer(self.footer, footer_align, border)
+        bottom = _create_header_footer(self.footer, footer_align, border)
 
         if border:
             bottom = Columns([
@@ -172,50 +220,4 @@ class Pane(WidgetDecoration, WidgetWrap):
         else:
             current_attrib = ""
 
-        self.title.set_text((current_attrib, self._format_title(text)))
-        self.title._invalidate()
-
-    def _format_title(self, title: str) -> str:
-        if len(title) > 0:
-            return " %s " % title
-        else:
-            return ""
-
-    def _create_text_widget(self, text: str, align: str, attr: Optional[str]) \
-            -> Optional[Widget]:
-        if text == "":
-            return None
-
-        if align not in ('left', 'center', 'right'):
-            raise ValueError(
-                f'align must be one of "left", "right", or "center, {align} '
-                f'provided"')
-
-        if attr:
-            return Text((attr, self._format_title(text)))
-        else:
-            return Text(self._format_title(text))
-
-    def _create_header_footer(self, text: Text, text_align: str, border: bool) \
-            -> Optional[Columns]:
-
-        if Text is None and not border:
-            return None
-
-        if border:
-            line = Divider(u'─')
-        else:
-            line = Divider(' ')
-
-        if text:
-            if text_align == 'left':
-                widgets = [('flow', text), line]
-            else:
-                widgets = [line, ('flow', text)]
-                if text_align == 'center':
-                    widgets.append(line)
-
-        else:
-            widgets = [line]
-
-        return Columns(widgets)
+        self.title.set_text((current_attrib, _format_title(text)))

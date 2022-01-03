@@ -2,7 +2,8 @@
 of Curses UI and general user interaction with the app,
 """
 from oresat_tpane.pane import Pane, VSplit, HSplit, TextFill
-from urwid import MainLoop
+from oresat_tpane.datagrid import DataGrid
+from urwid import MainLoop, ExitMainLoop
 
 MAJOR = 0
 MINOR = 0
@@ -28,4 +29,6 @@ __all__ = [
     "HSplit",
     "TextFill",
     "MainLoop",
+    "DataGrid",
+    "ExitMainLoop",
 ]
