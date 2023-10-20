@@ -38,7 +38,7 @@ setuptools.setup(
         "Topic :: Software Development :: User Interfaces",
     ],
     install_requires=[
-        "urwid == 2.1.2"
+        "urwid == 2.2.3"
     ],
     extras_require={
         "dev": [
